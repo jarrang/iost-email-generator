@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Email HTML Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React UMD + Babel for quick no-build setup -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useMemo, useRef, useState } = React;
+
+      // --- Utility helpers ---
+      const readFileAsDataURL = (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+      function download(filename, text) {
+        const el = document.createElement("a");
+        el.setAttribute(
+          "href",
+          URL.createObjectURL(new Blob([text], { type: "text/html;charset=utf-8" }))
+        );
+        el.setAttribute("download", filename);
+        el.style.display = "none";
+        document.body.appendChild(el);
+        el.click();
+        document.body.removeChild(el);
+      }
+
+      const DEFAULT_TEMPLATE = `
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{subject}}</title>
+    <style>
+      /* CLIENT RESETS */
+      body { margin:0; padding:0; background:#f6f9fc; }
+      img { border:0; outline:none; text-decoration:none; display:block; }
+      table { border-collapse:collapse; }
+      /* MOBILE */
+      @media only screen and (max-width:600px){
+        .container{ width:100% !important; }
+        .px{ padding-left:16px !important; padding-right:16px !important; }
+        .btn{ width:100% !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0; padding:0; background:#f6f9fc;">
+    <span style="display:none !important; color:transparent; visibility:hidden; mso-hide:all; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">{{preheader}}</span>
+    <table role="presentation" width="100%" bgcolor="#f6f9fc">
+      <tr>
+        <td align="center" style="padding:24px;">
+          <table role="presentation" width="600" class="container" bgcolor="#ffffff" style="width:600px; background:#ffffff; border-radius:12px; overflow:hidden;">
+            <!-- Header -->
+            <tr>
+              <td style="padding:20px 24px;" class="px">
+                <table role="presentation" width="100%">
+                  <tr>
+                    <td align="left" style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#65748b;">
+                      {{#if logo_img}}<img src="{{logo_img}}" alt="Logo" height="32" style="height:32px;"/>{{/if}}
+                    </td>
+                    <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#94a3b8;">{{send_date}}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Hero -->
+            {{#if hero_img}}
+            <tr>
+              <td><img src="{{hero_img}}" alt="" width="600" style="width:100%; height:auto;"/></td>
+            </tr>
+            {{/if}}
+            <!-- Body -->
+            <tr>
+              <td style="padding:24px 28px;" class="px">
+                <h1 style="margin:0 0 12px; font-family:Arial,Helvetica,sans-serif; font-size:24px; line-height:1.25; color:#0f172a;">{{title}}</h1>
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; color:#334155;">
+                  {{body_html}}
+                </div>
+                {{#if cta_url}}
+                <table role="presentation" align="left" style="margin-top:20px;">
+                  <tr>
+                    <td bgcolor="#2563eb" style="border-radius:8px;">
+                      <a href="{{cta_url}}" class="btn" style="display:inline-block; padding:12px 18px; font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#ffffff; text-decoration:none;">{{cta_label}}</a>
+                    </td>
+                  </tr>
+                </table>
+                {{/if}}
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td style="padding:16px 24px; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#64748b;" class="px">
+                {{footer_html}}
+              </td>
+            </tr>
+          </table>
+          <div style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#94a3b8; padding:12px 8px;">You’re seeing a preview. Some clients may render differently.</div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+      /**
+       * Very small templating: replaces {{var}} with values.
+       * Supports {{#if var}} ... {{/if}} blocks (rendered only if truthy and non-empty).
+       */
+      function applyTemplate(tpl, vars) {
+        let out = tpl;
+        // handle if-blocks
+        out = out.replace(/\{\{#if\s+([\w_]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (m, name, inner) => {
+          const v = vars[name];
+          return v ? inner : "";
+        });
+        // replace simple vars
+        out = out.replace(/\{\{([\w_]+)\}\}/g, (m, name) => (vars[name] ?? ""));
+        return out;
+      }
+
+      function App() {
+        const [subject, setSubject] = useState("");
+        const [preheader, setPreheader] = useState("");
+        const [title, setTitle] = useState("");
+        const [bodyHtml, setBodyHtml] = useState("<p>Write your email content here…</p>");
+        const [ctaLabel, setCtaLabel] = useState("Read more");
+        const [ctaUrl, setCtaUrl] = useState("");
+        const [logoImg, setLogoImg] = useState("");
+        const [heroImg, setHeroImg] = useState("");
+        const [footerHtml, setFooterHtml] = useState("<p>You received this email because you signed up…<br/>123 Example St, City</p>");
+        const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
+        const [embedImages, setEmbedImages] = useState(true);
+
+        const iframeRef = useRef(null);
+
+        const vars = useMemo(() => ({
+          subject,
+          preheader,
+          title,
+          body_html: bodyHtml,
+          cta_label: ctaLabel,
+          cta_url: ctaUrl,
+          logo_img: logoImg,
+          hero_img: heroImg,
+          footer_html: footerHtml,
+          send_date: new Date().toLocaleDateString(),
+        }), [subject, preheader, title, bodyHtml, ctaLabel, ctaUrl, logoImg, heroImg, footerHtml]);
+
+        const finalHtml = useMemo(() => applyTemplate(template, vars), [template, vars]);
+
+        const handleFile = async (e, setter) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          if (embedImages) {
+            const dataUrl = await readFileAsDataURL(file);
+            setter(dataUrl);
+          } else {
+            alert("Embedding is off. Please host the image somewhere and paste the URL.");
+          }
+        };
+
+        const writePreview = () => {
+          if (!iframeRef.current) return;
+          const doc = iframeRef.current.contentDocument;
+          doc.open();
+          doc.write(finalHtml);
+          doc.close();
+        };
+
+        const copyHtml = async () => {
+          try {
+            await navigator.clipboard.writeText(finalHtml);
+            alert("HTML copied to clipboard");
+          } catch (e) {
+            alert("Copy failed. Your browser may block clipboard access.");
+          }
+        };
+
+        return (
+          <div className="min-h-screen bg-slate-50 text-slate-800">
+            <header className="p-6 border-b bg-white sticky top-0 z-10">
+              <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-2xl bg-blue-600"/>
+                  <div>
+                    <h1 className="text-xl font-semibold">Email HTML Generator</h1>
+                    <p className="text-sm text-slate-500">No-code form → export email-safe HTML</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => download((subject || "email").replace(/\s+/g, "-") + ".html", finalHtml)}
+                    className="px-4 py-2 rounded-xl bg-blue-600 text-white shadow hover:bg-blue-700"
+                  >Download HTML</button>
+                  <button onClick={copyHtml} className="px-4 py-2 rounded-xl bg-slate-900 text-white shadow hover:bg-black">Copy HTML</button>
+                </div>
+              </div>
+            </header>
+
+            <main className="max-w-6xl mx-auto grid md:grid-cols-2 gap-6 p-6">
+              {/* Form */}
+              <section className="bg-white rounded-2xl shadow-sm p-4 md:p-6 border">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Content form</h2>
+                  <label className="text-sm inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="h-4 w-4" checked={embedImages} onChange={(e)=>setEmbedImages(e.target.checked)} />
+                    Embed uploaded images (base64)
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium">Subject</label>
+                    <input value={subject} onChange={(e)=>setSubject(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Newsletter – October" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Preheader</label>
+                    <input value={preheader} onChange={(e)=>setPreheader(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="A short summary visible in inbox previews" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Heading</label>
+                    <input value={title} onChange={(e)=>setTitle(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Welcome to our latest update" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Body (HTML allowed)</label>
+                    <textarea value={bodyHtml} onChange={(e)=>setBodyHtml(e.target.value)} rows={8} className="mt-1 w-full rounded-xl border px-3 py-2 font-mono text-sm" placeholder="<p>Type email copy here…</p>" />
+                    <p className="text-xs text-slate-500 mt-1">Tip: Keep it simple — many email clients are strict. Inline styles are okay.</p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium">CTA Label</label>
+                      <input value={ctaLabel} onChange={(e)=>setCtaLabel(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Shop now" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">CTA URL</label>
+                      <input value={ctaUrl} onChange={(e)=>setCtaUrl(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="https://example.com" />
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium">Logo image</label>
+                      <div className="flex gap-2">
+                        <input value={logoImg} onChange={(e)=>setLogoImg(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Paste image URL or upload" />
+                        <input type="file" accept="image/*" onChange={(e)=>handleFile(e, setLogoImg)} className="mt-1" />
+                      </div>
+                      {logoImg && <img src={logoImg} alt="logo preview" className="mt-2 h-10" />}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Hero image</label>
+                      <div className="flex gap-2">
+                        <input value={heroImg} onChange={(e)=>setHeroImg(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Paste image URL or upload" />
+                        <input type="file" accept="image/*" onChange={(e)=>handleFile(e, setHeroImg)} className="mt-1" />
+                      </div>
+                      {heroImg && <img src={heroImg} alt="hero preview" className="mt-2 h-24 object-cover rounded-lg" />}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium">Footer (HTML allowed)</label>
+                    <textarea value={footerHtml} onChange={(e)=>setFooterHtml(e.target.value)} rows={4} className="mt-1 w-full rounded-xl border px-3 py-2 font-mono text-sm" />
+                  </div>
+                </div>
+              </section>
+
+              {/* Preview & Template editor */}
+              <section className="bg-white rounded-2xl shadow-sm p-4 md:p-6 border flex flex-col">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-semibold">Live preview</h2>
+                  <button onClick={writePreview} className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 border">Refresh</button>
+                </div>
+                <iframe ref={iframeRef} title="Preview" className="w-full h-96 border rounded-xl" />
+
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-sm text-slate-600">Advanced: edit the HTML email template</summary>
+                  <div className="mt-3 grid gap-2">
+                    <p className="text-xs text-slate-500">Use placeholders: {"{{subject}}"}, {"{{preheader}}"}, {"{{title}}"}, {"{{body_html}}"}, {"{{cta_label}}"}, {"{{cta_url}}"}, {"{{logo_img}}"}, {"{{hero_img}}"}, {"{{footer_html}}"}.
+                    Conditional blocks with {"{{#if name}} ... {{/if}}"}.</p>
+                    <textarea value={template} onChange={(e)=>setTemplate(e.target.value)} rows={16} className="w-full rounded-xl border px-3 py-2 font-mono text-xs" />
+                  </div>
+                </details>
+
+                <div className="mt-4 text-xs text-slate-500">
+                  <p>Note: Embedding images as base64 works for many clients but some ESPs rewrite or block data URIs. If your email service requires hosted images, toggle off embedding and paste hosted URLs instead.</p>
+                </div>
+              </section>
+            </main>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
