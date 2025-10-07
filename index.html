@@ -24,10 +24,9 @@ function download(filename, text) {
 
 // ================= MAIN EMAIL TEMPLATE (YOUR JARRANG CODE) =================
 // Notes:
-//  - I replaced your hidden preheader with {{preheader}}
-//  - I parameterised the hero image/link/alt, lead block fields, and the repeated STORIES area
-//  - I removed your fixed two story blocks and inserted {{stories_html}} instead (so you can choose any count)
-//  - Everything else is left intact
+//  - hidden preheader -> {{preheader}}
+//  - parameterised hero image/link/alt, lead block fields, and repeatable modules slot
+//  - {{stories_html}} is now our generic modules slot
 const DEFAULT_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" style="background-color: #f1f3f1; color-scheme: light dark; supported-color-schemes: light dark;">
@@ -150,9 +149,9 @@ body{margin:0;padding:0}table{border-collapse:collapse;mso-table-lspace:0;mso-ta
 </table>
 <!-- END .fw-lead -->
 
-<!-- ================= STORIES SLOT ================= -->
+<!-- ================= MODULES SLOT ================= -->
 {{stories_html}}
-<!-- =============== END STORIES SLOT =============== -->
+<!-- =============== END MODULES SLOT =============== -->
 
 <!-- ======= FOOTER (unchanged from your code) ======= -->
 <table width="620" class="fullWidth" bgcolor="#ffffff" border="0" cellspacing="0" cellpadding="0" align="center" style="width: 620px">
@@ -331,6 +330,29 @@ function applyTemplate(tpl, vars) {
   return out;
 }
 
+// ============== MODULE REGISTRY & HELPERS =================
+const MODULE_TEMPLATES = {
+  "story-left": STORY_LEFT,
+  "story-right": STORY_RIGHT,
+  // future: divider, quote, two-up, etc.
+};
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+const newStory = (side = "left") => ({
+  id: uid(),
+  type: side === "right" ? "story-right" : "story-left",
+  props: {
+    headline: "Story headline",
+    body_copy: "<p>Short teaser…</p>",
+    image_url: "",
+    image_src: "https://placehold.co/350x300",
+    alt: "",
+    cta_text: "Read more",
+    cta_url: "",
+  },
+});
+
 export default function App() {
   // Global / hidden preheader
   const [preheader, setPreheader] = useState("");
@@ -346,33 +368,15 @@ export default function App() {
   const [leadCtaText, setLeadCtaText] = useState("Discover more");
   const [leadCtaUrl, setLeadCtaUrl] = useState("");
 
-  // Stories (repeatable modules)
-  const [storyCount, setStoryCount] = useState(2);
-  const [stories, setStories] = useState([
-    { headline: "Story 1 headline", body_copy: "<p>Short teaser for story 1…</p>", image_url: "", image_src: "https://placehold.co/350x300", alt: "", cta_text: "Read more", cta_url: "", reverse: false },
-    { headline: "Story 2 headline", body_copy: "<p>Short teaser for story 2…</p>", image_url: "", image_src: "https://placehold.co/350x300", alt: "", cta_text: "Read more", cta_url: "", reverse: true },
-  ]);
+  // Repeatable modules list (supersedes storyCount/stories)
+  const [modules, setModules] = useState([newStory("left"), newStory("right")]);
 
   // Image embedding toggle
   const [embedImages, setEmbedImages] = useState(true);
 
   const iframeRef = useRef(null);
 
-  // Keep stories length in sync with count
-  useEffect(() => {
-    setStories((prev) => {
-      const copy = [...prev];
-      if (storyCount > copy.length) {
-        while (copy.length < storyCount) {
-          copy.push({ headline: `Story ${copy.length + 1} headline`, body_copy: "<p>Short teaser…</p>", image_url: "", image_src: "https://placehold.co/350x300", alt: "", cta_text: "Read more", cta_url: "", reverse: copy.length % 2 === 1 });
-        }
-      } else if (storyCount < copy.length) {
-        copy.length = storyCount;
-      }
-      return copy;
-    });
-  }, [storyCount]);
-
+  // HERO upload
   const handleHeroFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -381,18 +385,55 @@ export default function App() {
     setHeroSrc(dataUrl);
   };
 
-  const handleStoryFile = async (e, idx) => {
+  // MODULE image upload
+  const handleModuleImageFile = async (e, idx) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!embedImages) return alert("Embedding is off. Host the image and paste the URL.");
     const dataUrl = await readFileAsDataURL(file);
-    setStories((prev) => { const c=[...prev]; c[idx] = { ...c[idx], image_src: dataUrl }; return c; });
+    setModules((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], props: { ...next[idx].props, image_src: dataUrl } };
+      return next;
+    });
   };
 
-  const stories_html = useMemo(() => {
-    return stories.map((s) => applyTemplate(s.reverse ? STORY_RIGHT : STORY_LEFT, s)).join("\n");
-  }, [stories]);
+  // MODULE list operations
+  const addModule = (type = "story-left") =>
+    setModules((prev) => [
+      ...prev,
+      type === "story-right" ? newStory("right") : newStory("left"),
+    ]);
 
+  const removeModule = (id) =>
+    setModules((prev) => prev.filter((m) => m.id !== id));
+
+  const duplicateModule = (id) =>
+    setModules((prev) => {
+      const i = prev.findIndex((m) => m.id === id);
+      if (i === -1) return prev;
+      const copy = JSON.parse(JSON.stringify(prev[i]));
+      copy.id = uid();
+      return [...prev.slice(0, i + 1), copy, ...prev.slice(i + 1)];
+    });
+
+  const moveModule = (id, dir) =>
+    setModules((prev) => {
+      const i = prev.findIndex((m) => m.id === id);
+      if (i === -1) return prev;
+      const j = i + (dir === "up" ? -1 : 1);
+      if (j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+
+  // Build modules HTML
+  const modules_html = useMemo(() => {
+    return modules.map((m) => applyTemplate(MODULE_TEMPLATES[m.type], m.props)).join("\n");
+  }, [modules]);
+
+  // Build final HTML
   const finalHtml = useMemo(() => {
     return applyTemplate(DEFAULT_TEMPLATE, {
       preheader,
@@ -403,19 +444,25 @@ export default function App() {
       lead_body_copy: leadBody,
       lead_cta_text: leadCtaText,
       lead_cta_url: leadCtaUrl,
-      stories_html,
+      stories_html: modules_html,
     });
-  }, [preheader, heroLink, heroSrc, heroAlt, leadHeadline, leadBody, leadCtaText, leadCtaUrl, stories_html]);
+  }, [preheader, heroLink, heroSrc, heroAlt, leadHeadline, leadBody, leadCtaText, leadCtaUrl, modules_html]);
 
   const writePreview = () => {
     if (!iframeRef.current) return;
     const doc = iframeRef.current.contentDocument;
-    doc.open(); doc.write(finalHtml); doc.close();
+    doc.open();
+    doc.write(finalHtml);
+    doc.close();
   };
 
   const copyHtml = async () => {
-    try { await navigator.clipboard.writeText(finalHtml); alert("HTML copied to clipboard"); }
-    catch { alert("Copy failed. Your browser may block clipboard access."); }
+    try {
+      await navigator.clipboard.writeText(finalHtml);
+      alert("HTML copied to clipboard");
+    } catch {
+      alert("Copy failed. Your browser may block clipboard access.");
+    }
   };
 
   return (
@@ -426,7 +473,7 @@ export default function App() {
             <div className="w-9 h-9 rounded-2xl bg-blue-600"/>
             <div>
               <h1 className="text-xl font-semibold">Email HTML Generator — Jarrang Template</h1>
-              <p className="text-sm text-slate-500">Pick # of stories, plug content, export email‑safe HTML</p>
+              <p className="text-sm text-slate-500">Repeatable modules: add, remove, duplicate, reorder</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -499,52 +546,131 @@ export default function App() {
 
           <hr/>
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold">Stories</h3>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-slate-600">Number of stories:</label>
-              <input type="number" min={0} max={12} value={storyCount} onChange={(e)=>setStoryCount(parseInt(e.target.value || "0",10))} className="w-20 rounded-xl border px-3 py-1" />
+            <h3 className="text-base font-semibold">Modules</h3>
+            <div className="flex gap-2">
+              <button onClick={() => addModule("story-left")} className="px-3 py-2 rounded-lg border">+ Story (Left)</button>
+              <button onClick={() => addModule("story-right")} className="px-3 py-2 rounded-lg border">+ Story (Right)</button>
             </div>
           </div>
 
           <div className="space-y-4">
-            {stories.map((s, idx) => (
-              <div key={idx} className="rounded-xl border p-3">
+            {modules.map((m, idx) => (
+              <div key={m.id} className="rounded-xl border p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <strong>Story {idx + 1}</strong>
-                  <label className="text-sm inline-flex items-center gap-2">
-                    <input type="checkbox" checked={s.reverse} onChange={(e)=>setStories(p=>{const c=[...p]; c[idx] = { ...c[idx], reverse: e.target.checked }; return c;})} />
-                    Reverse layout (image right)
-                  </label>
+                  <strong>Module {idx + 1}</strong>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={m.type}
+                      onChange={(e) =>
+                        setModules((prev) => {
+                          const next = [...prev];
+                          next[idx] = { ...m, type: e.target.value };
+                          return next;
+                        })
+                      }
+                      className="border rounded-lg px-2 py-1 text-sm"
+                    >
+                      <option value="story-left">Story — Left</option>
+                      <option value="story-right">Story — Right</option>
+                    </select>
+                    <button onClick={() => moveModule(m.id, "up")} className="px-2 py-1 border rounded">↑</button>
+                    <button onClick={() => moveModule(m.id, "down")} className="px-2 py-1 border rounded">↓</button>
+                    <button onClick={() => duplicateModule(m.id)} className="px-2 py-1 border rounded">Duplicate</button>
+                    <button onClick={() => removeModule(m.id)} className="px-2 py-1 border rounded text-red-600">Remove</button>
+                  </div>
                 </div>
+
+                {/* fields driven by m.props */}
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium">Headline</label>
-                    <input value={s.headline} onChange={(e)=>setStories(p=>{const c=[...p]; c[idx]={...c[idx], headline:e.target.value}; return c;})} className="mt-1 w-full rounded-xl border px-3 py-2" />
+                    <input
+                      value={m.props.headline}
+                      onChange={(e) =>
+                        setModules((prev) => {
+                          const next = [...prev];
+                          next[idx] = { ...m, props: { ...m.props, headline: e.target.value } };
+                          return next;
+                        })
+                      }
+                      className="mt-1 w-full rounded-xl border px-3 py-2"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium">CTA text</label>
-                    <input value={s.cta_text} onChange={(e)=>setStories(p=>{const c=[...p]; c[idx]={...c[idx], cta_text:e.target.value}; return c;})} className="mt-1 w-full rounded-xl border px-3 py-2" />
+                    <input
+                      value={m.props.cta_text}
+                      onChange={(e) =>
+                        setModules((prev) => {
+                          const next = [...prev];
+                          next[idx] = { ...m, props: { ...m.props, cta_text: e.target.value } };
+                          return next;
+                        })
+                      }
+                      className="mt-1 w-full rounded-xl border px-3 py-2"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium">CTA URL</label>
-                    <input value={s.cta_url} onChange={(e)=>setStories(p=>{const c=[...p]; c[idx]={...c[idx], cta_url:e.target.value}; return c;})} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="https://…" />
+                    <input
+                      value={m.props.cta_url}
+                      onChange={(e) =>
+                        setModules((prev) => {
+                          const next = [...prev];
+                          next[idx] = { ...m, props: { ...m.props, cta_url: e.target.value } };
+                          return next;
+                        })
+                      }
+                      className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="https://…"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium">Image link (on click)</label>
-                    <input value={s.image_url} onChange={(e)=>setStories(p=>{const c=[...p]; c[idx]={...c[idx], image_url:e.target.value}; return c;})} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="https://…" />
+                    <input
+                      value={m.props.image_url}
+                      onChange={(e) =>
+                        setModules((prev) => {
+                          const next = [...prev];
+                          next[idx] = { ...m, props: { ...m.props, image_url: e.target.value } };
+                          return next;
+                        })
+                      }
+                      className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="https://…"
+                    />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium">Image URL or upload</label>
                     <div className="flex gap-2">
-                      <input value={s.image_src} onChange={(e)=>setStories(p=>{const c=[...p]; c[idx]={...c[idx], image_src:e.target.value}; return c;})} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Paste image URL or upload" />
-                      <input type="file" accept="image/*" onChange={(e)=>handleStoryFile(e, idx)} className="mt-1" />
+                      <input
+                        value={m.props.image_src}
+                        onChange={(e) =>
+                          setModules((prev) => {
+                            const next = [...prev];
+                            next[idx] = { ...m, props: { ...m.props, image_src: e.target.value } };
+                            return next;
+                          })
+                        }
+                        className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Paste image URL or upload"
+                      />
+                      <input type="file" accept="image/*" onChange={(e)=>handleModuleImageFile(e, idx)} className="mt-1" />
                     </div>
-                    {s.image_src && <img src={s.image_src} alt="story" className="mt-2 h-24 object-cover rounded-lg" />}
+                    {m.props.image_src && <img src={m.props.image_src} alt="story" className="mt-2 h-24 object-cover rounded-lg" />}
                   </div>
                 </div>
                 <div className="mt-2">
                   <label className="block text-sm font-medium">Body (HTML allowed)</label>
-                  <textarea value={s.body_copy} onChange={(e)=>setStories(p=>{const c=[...p]; c[idx]={...c[idx], body_copy:e.target.value}; return c;})} rows={4} className="mt-1 w-full rounded-xl border px-3 py-2 font-mono text-xs" />
+                  <textarea
+                    value={m.props.body_copy}
+                    onChange={(e) =>
+                      setModules((prev) => {
+                        const next = [...prev];
+                        next[idx] = { ...m, props: { ...m.props, body_copy: e.target.value } };
+                        return next;
+                      })
+                    }
+                    rows={4}
+                    className="mt-1 w-full rounded-xl border px-3 py-2 font-mono text-xs"
+                  />
                 </div>
               </div>
             ))}
@@ -565,7 +691,7 @@ export default function App() {
               <p><strong>Preheader</strong> → hidden div at the very top.</p>
               <p><strong>Hero</strong> → replaces your <code>.fw-image</code> block: <code>{{"{{hero_link}}"}}</code>, <code>{{"{{hero_src}}"}}</code>, <code>{{"{{hero_alt}}"}}</code>.</p>
               <p><strong>Lead</strong> → your <code>.fw-lead</code> block: <code>{{"{{lead_headline}}"}}</code>, <code>{{"{{lead_body_copy}}"}}</code>, <code>{{"{{lead_cta_text}}"}}</code>, <code>{{"{{lead_cta_url}}"}}</code>.</p>
-              <p><strong>Stories</strong> → all story modules injected at <code>{{"{{stories_html}}"}}</code> using the two story templates (Left/Right). You can edit these templates in code if needed.</p>
+              <p><strong>Modules</strong> → all modules injected at <code>{{"{{stories_html}}"}}</code> using the registry (Story Left/Right for now). Extend by adding templates and listing them in <code>MODULE_TEMPLATES</code>.</p>
             </div>
           </details>
 
