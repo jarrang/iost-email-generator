@@ -279,48 +279,74 @@ const STORY_LEFT = `
 <!-- END .story-1col (LEFT) -->`;
 
 // RIGHT (reversed) layout using dir="rtl" on container like your second block
-const STORY_RIGHT = `
-<!-- START .story-1col (RIGHT) -->
-<table role="presentation" class="content-outer" align="center" border="0" cellspacing="0" cellpadding="0" style="background-color: #f3f2f0; vertical-align: middle; width: 620px;">
+$1
+
+// LEAD MODULE (Hero + Intro copy + CTA)
+const LEAD_MODULE = `
+<!-- START .fw-image (HERO) -->
+<table role="presentation" class="content-outer" align="center" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; width: 620px;">
 <tr>
-<td class="content-inner" valign="middle" align="center" style="width: 540px;">
-<table role="presentation" dir="rtl" class="sect" align="center" border="0" cellspacing="0" cellpadding="0" style="width: 100%;">
+<td class="content-inner" valign="top" align="center" style="width: 540px;">
+<table role="presentation" class="sect" align="center" border="0" cellspacing="0" cellpadding="0" style="width: 100%;">
 <tr>
-<td dir="ltr" class="block" valign="middle" style="width: 310px;">
+<td class="block" valign="top" align="center" style="width: 100%;">
 <div>
-<a href="{{image_url}}" target="_blank">
-<img class="fill" src="{{image_src}}" alt="{{alt}}" width="350" height="300" align="top" style="border: none; display: block; height: auto; outline: none; text-decoration: none;">
+<a href="{{hero_link}}" target="_blank">
+<img class="fill" src="{{hero_src}}" alt="{{hero_alt}}" width="620" height="620" align="top" style="border: none; display: block; height: auto; outline: none; text-decoration: none;">
 </a>
 </div>
 </td>
-<td dir="ltr" class="block" valign="middle" style="width: 310px;">
-<table class="sect" role="presentation" align="left" border="0" cellspacing="0" cellpadding="0" style="width: 100%;">
-<tr><td valign="middle" style="padding: 20px;">
-<table class="sect" border="0" cellspacing="0" cellpadding="0" style="width: 100%;">
-<tr><td><div style="font-size:0;height:0;line-height:0;">&nbsp;</div></td></tr>
-<tr><td class="mobile-text-center" style="text-align: left;"><span style="color: #66b0bd; font-family: sans-serif, Arial, Helvetica, 'Montserrat'; font-size: 18px; line-height: 24px;">{{headline}}</span></td></tr>
-<tr><td class="mobile-text-center" style="color: #979C9C; font-family: sans-serif, Arial, Helvetica, 'Montserrat'; font-size: 14px; line-height: 19px; padding-top: 5px; text-align: left;">{{body_copy}}</td></tr>
-<tr><td><div style="font-size:15px;height:15px;line-height:15px;">&nbsp;</div></td></tr>
-<tr><td>
-<table class="sect" role="presentation" align="left" border="0" cellspacing="0" cellpadding="0" style="width: 100%;">
-<tr><td class="block" valign="top" align="left" style="width: 100%;">
-<table role="presentation" class="button button-mobile-center" cellspacing="0" cellpadding="0" border="0" style="background-color: transparent; border: 2px solid #66b0bd; border-radius: 10px;">
-<tr><td align="center" style="color: #66b0bd; font-family: sans-serif, Arial, Helvetica, 'Montserrat'; font-size: 15px; font-weight: bold; line-height: 20px; padding: 6px 20px; text-align: center; text-transform: uppercase; width: 100%;">
-<a href="{{cta_url}}" target="_blank" style="color: #66b0bd; text-decoration: none;">{{cta_text}}</a>
-</td></tr>
+</tr>
 </table>
-</td></tr>
+</td>
+</tr>
 </table>
-</td></tr>
-<tr><td><div style="font-size:0;height:0;line-height:0;">&nbsp;</div></td></tr>
-</table>
+<!-- END .fw-image -->
+
+<!-- START .fw-lead (INTRO COPY) -->
+<table role="presentation" class="content-outer" align="center" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; width: 620px;">
+<tr>
+<td class="side" style="width: 40px;">&nbsp;</td>
+<td class="content-inner" align="center" style="width: 540px;">
+<table role="presentation" class="sect" align="center" border="0" cellspacing="0" cellpadding="0" style="width: 100%;">
+<tr><td><div style="clear: both; display: block; font-size: 30px; height: 30px; line-height: 30px;">&nbsp;</div></td></tr>
+<tr>
+<td class="mobile-text-center" style="text-align: left;">
+<h1 style="color: #66b0bd; font-family: sans-serif, Arial, Helvetica, 'Montserrat'; font-size: 24px; font-style: italic; font-weight: normal; line-height: 28px; margin-top: 0;">
+<span style="font-family: 'Montserrat', sans-serif !important;">{{lead_headline}}</span>
+</h1>
+</td>
+</tr>
+<tr><td><div style="clear: both; display: block; font-size: 10px; height: 10px; line-height: 10px;">&nbsp;</div></td></tr>
+<tr>
+<td class="mobile-text-center" style="color: #979C9C; font-family: sans-serif, Arial, Helvetica, 'Montserrat'; font-size: 16px; line-height: 20px; text-align: left;">{{lead_body_copy}}</td>
+</tr>
+<tr><td><div style="clear: both; display: block; font-size: 20px; height: 20px; line-height: 20px;">&nbsp;</div></td></tr>
+<tr>
+<td>
+<table role="presentation" class="sect" align="center" border="0" cellspacing="0" cellpadding="0" style="width: 100%;">
+<tr>
+<td class="block" valign="middle" align="center" style="width: 100%;">
+<table role="presentation" class="button button-mobile-center" cellspacing="0" cellpadding="0" border="0" style="background-color: transparent; border: 2px solid #66b0bd; border-collapse: separate; border-radius: 10px;">
+<tr>
+<td align="center" style="color: #66b0bd; font-family: sans-serif, Arial, Helvetica, 'Montserrat'; font-size: 15px; font-weight: bold; line-height: 20px; padding: 10px 60px; text-align: center; text-transform: uppercase; width: 100%;">
+<a href="{{lead_cta_url}}" target="_blank" style="color: #66b0bd; text-decoration: none;">{{lead_cta_text}}</a>
 </td>
 </tr>
 </table>
 </td>
 </tr>
 </table>
-<!-- END .story-1col (RIGHT) -->`;
+</td>
+</tr>
+<tr><td><div style="clear: both; display: block; font-size: 30px; height: 30px; line-height: 30px;">&nbsp;</div></td></tr>
+</table>
+</td>
+<td class="side" style="width: 40px;">&nbsp;</td>
+</tr>
+</table>
+<!-- END .fw-lead -->
+`;
 
 // ----- Minimal templating: {{var}} and {{#if var}}...{{/if}} -----
 function applyTemplate(tpl, vars) {
@@ -334,6 +360,7 @@ function applyTemplate(tpl, vars) {
 const MODULE_TEMPLATES = {
   "story-left": STORY_LEFT,
   "story-right": STORY_RIGHT,
+  "lead": LEAD_MODULE,
   // future: divider, quote, two-up, etc.
 };
 
@@ -350,6 +377,20 @@ const newStory = (side = "left") => ({
     alt: "",
     cta_text: "Read more",
     cta_url: "",
+  },
+});
+
+const newLeadModule = () => ({
+  id: uid(),
+  type: "lead",
+  props: {
+    hero_link: "",
+    hero_src: "https://placehold.co/620x620",
+    hero_alt: "",
+    lead_headline: "A beautiful archipelago adventure awaits",
+    lead_body_copy: "<p>Intro / overview copy goes here. Keep it concise and inbox‑friendly.</p>",
+    lead_cta_text: "Discover more",
+    lead_cta_url: "",
   },
 });
 
@@ -387,34 +428,28 @@ export default function App() {
 
   // MODULE image upload
   const handleModuleImageFile = async (e, idx) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!embedImages) return alert("Embedding is off. Host the image and paste the URL.");
-    const dataUrl = await readFileAsDataURL(file);
-    setModules((prev) => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], props: { ...next[idx].props, image_src: dataUrl } };
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!embedImages) return alert("Embedding is off. Host the image and paste the URL.");
+  const dataUrl = await readFileAsDataURL(file);
+  setModules((prev) => {
+    const next = [...prev];
+    const isLead = next[idx]?.type === "lead";
+    const key = isLead ? "hero_src" : "image_src";
+    next[idx] = { ...next[idx], props: { ...next[idx].props, [key]: dataUrl } };
+    return next;
+  });
+};
       return next;
     });
   };
 
   // MODULE list operations
   const addModule = (type = "story-left") =>
-    setModules((prev) => [
-      ...prev,
-      type === "story-right" ? newStory("right") : newStory("left"),
-    ]);
-
-  const removeModule = (id) =>
-    setModules((prev) => prev.filter((m) => m.id !== id));
-
-  const duplicateModule = (id) =>
     setModules((prev) => {
-      const i = prev.findIndex((m) => m.id === id);
-      if (i === -1) return prev;
-      const copy = JSON.parse(JSON.stringify(prev[i]));
-      copy.id = uid();
-      return [...prev.slice(0, i + 1), copy, ...prev.slice(i + 1)];
+      if (type === "lead") return [...prev, newLeadModule()];
+      return [...prev, type === "story-right" ? newStory("right") : newStory("left")];
+    });
     });
 
   const moveModule = (id, dir) =>
@@ -486,40 +521,11 @@ export default function App() {
       <main className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-6 p-6">
         {/* LEFT: Form */}
         <section className="bg-white rounded-2xl shadow-sm p-4 md:p-6 border space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Global settings</h2>
-            <label className="text-sm inline-flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="h-4 w-4" checked={embedImages} onChange={(e)=>setEmbedImages(e.target.checked)} />
-              Embed uploaded images (base64)
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-sm font-medium">Preheader (hidden)</label>
-              <input value={preheader} onChange={(e)=>setPreheader(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Short inbox preview text" />
+          $1<button onClick={() => addModule("lead")} className="px-3 py-2 rounded-lg border">+ Lead module</button>
             </div>
           </div>
 
-          <hr/>
-          <h3 className="text-base font-semibold">Hero</h3>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium">Hero link (on click)</label>
-              <input value={heroLink} onChange={(e)=>setHeroLink(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="https://…" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Hero alt text</label>
-              <input value={heroAlt} onChange={(e)=>setHeroAlt(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Descriptive alt" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium">Hero image URL or upload</label>
-              <div className="flex gap-2">
-                <input value={heroSrc} onChange={(e)=>setHeroSrc(e.target.value)} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Paste image URL or upload" />
-                <input type="file" accept="image/*" onChange={handleHeroFile} className="mt-1" />
-              </div>
-            </div>
-          </div>
+          <div className="space-y-4">
 
           <hr/>
           <h3 className="text-base font-semibold">Lead / intro</h3>
@@ -564,14 +570,25 @@ export default function App() {
                       onChange={(e) =>
                         setModules((prev) => {
                           const next = [...prev];
-                          next[idx] = { ...m, type: e.target.value };
+                          const newType = e.target.value;
+                          let replaced = { ...m, type: newType };
+                          if (newType === "lead") {
+                            const fresh = newLeadModule();
+                            replaced = { ...fresh, id: m.id };
+                          } else if (newType === "story-left" || newType === "story-right") {
+                            const fresh = newStory(newType === "story-right" ? "right" : "left");
+                            replaced = { ...fresh, id: m.id };
+                          }
+                          next[idx] = replaced;
                           return next;
                         })
+                      }
                       }
                       className="border rounded-lg px-2 py-1 text-sm"
                     >
                       <option value="story-left">Story — Left</option>
                       <option value="story-right">Story — Right</option>
+                      <option value="lead">Lead module</option>
                     </select>
                     <button onClick={() => moveModule(m.id, "up")} className="px-2 py-1 border rounded">↑</button>
                     <button onClick={() => moveModule(m.id, "down")} className="px-2 py-1 border rounded">↓</button>
@@ -589,9 +606,19 @@ export default function App() {
                       onChange={(e) =>
                         setModules((prev) => {
                           const next = [...prev];
-                          next[idx] = { ...m, props: { ...m.props, headline: e.target.value } };
+                          const newType = e.target.value;
+                          let replaced = { ...m, type: newType };
+                          if (newType === "lead") {
+                            const fresh = newLeadModule();
+                            replaced = { ...fresh, id: m.id };
+                          } else if (newType === "story-left" || newType === "story-right") {
+                            const fresh = newStory(newType === "story-right" ? "right" : "left");
+                            replaced = { ...fresh, id: m.id };
+                          }
+                          next[idx] = replaced;
                           return next;
                         })
+                      }
                       }
                       className="mt-1 w-full rounded-xl border px-3 py-2"
                     />
@@ -603,9 +630,19 @@ export default function App() {
                       onChange={(e) =>
                         setModules((prev) => {
                           const next = [...prev];
-                          next[idx] = { ...m, props: { ...m.props, cta_text: e.target.value } };
+                          const newType = e.target.value;
+                          let replaced = { ...m, type: newType };
+                          if (newType === "lead") {
+                            const fresh = newLeadModule();
+                            replaced = { ...fresh, id: m.id };
+                          } else if (newType === "story-left" || newType === "story-right") {
+                            const fresh = newStory(newType === "story-right" ? "right" : "left");
+                            replaced = { ...fresh, id: m.id };
+                          }
+                          next[idx] = replaced;
                           return next;
                         })
+                      }
                       }
                       className="mt-1 w-full rounded-xl border px-3 py-2"
                     />
@@ -617,9 +654,19 @@ export default function App() {
                       onChange={(e) =>
                         setModules((prev) => {
                           const next = [...prev];
-                          next[idx] = { ...m, props: { ...m.props, cta_url: e.target.value } };
+                          const newType = e.target.value;
+                          let replaced = { ...m, type: newType };
+                          if (newType === "lead") {
+                            const fresh = newLeadModule();
+                            replaced = { ...fresh, id: m.id };
+                          } else if (newType === "story-left" || newType === "story-right") {
+                            const fresh = newStory(newType === "story-right" ? "right" : "left");
+                            replaced = { ...fresh, id: m.id };
+                          }
+                          next[idx] = replaced;
                           return next;
                         })
+                      }
                       }
                       className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="https://…"
                     />
@@ -631,9 +678,19 @@ export default function App() {
                       onChange={(e) =>
                         setModules((prev) => {
                           const next = [...prev];
-                          next[idx] = { ...m, props: { ...m.props, image_url: e.target.value } };
+                          const newType = e.target.value;
+                          let replaced = { ...m, type: newType };
+                          if (newType === "lead") {
+                            const fresh = newLeadModule();
+                            replaced = { ...fresh, id: m.id };
+                          } else if (newType === "story-left" || newType === "story-right") {
+                            const fresh = newStory(newType === "story-right" ? "right" : "left");
+                            replaced = { ...fresh, id: m.id };
+                          }
+                          next[idx] = replaced;
                           return next;
                         })
+                      }
                       }
                       className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="https://…"
                     />
@@ -644,11 +701,21 @@ export default function App() {
                       <input
                         value={m.props.image_src}
                         onChange={(e) =>
-                          setModules((prev) => {
-                            const next = [...prev];
-                            next[idx] = { ...m, props: { ...m.props, image_src: e.target.value } };
-                            return next;
-                          })
+                        setModules((prev) => {
+                          const next = [...prev];
+                          const newType = e.target.value;
+                          let replaced = { ...m, type: newType };
+                          if (newType === "lead") {
+                            const fresh = newLeadModule();
+                            replaced = { ...fresh, id: m.id };
+                          } else if (newType === "story-left" || newType === "story-right") {
+                            const fresh = newStory(newType === "story-right" ? "right" : "left");
+                            replaced = { ...fresh, id: m.id };
+                          }
+                          next[idx] = replaced;
+                          return next;
+                        })
+                      }
                         }
                         className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Paste image URL or upload"
                       />
@@ -662,11 +729,21 @@ export default function App() {
                   <textarea
                     value={m.props.body_copy}
                     onChange={(e) =>
-                      setModules((prev) => {
-                        const next = [...prev];
-                        next[idx] = { ...m, props: { ...m.props, body_copy: e.target.value } };
-                        return next;
-                      })
+                        setModules((prev) => {
+                          const next = [...prev];
+                          const newType = e.target.value;
+                          let replaced = { ...m, type: newType };
+                          if (newType === "lead") {
+                            const fresh = newLeadModule();
+                            replaced = { ...fresh, id: m.id };
+                          } else if (newType === "story-left" || newType === "story-right") {
+                            const fresh = newStory(newType === "story-right" ? "right" : "left");
+                            replaced = { ...fresh, id: m.id };
+                          }
+                          next[idx] = replaced;
+                          return next;
+                        })
+                      }
                     }
                     rows={4}
                     className="mt-1 w-full rounded-xl border px-3 py-2 font-mono text-xs"
